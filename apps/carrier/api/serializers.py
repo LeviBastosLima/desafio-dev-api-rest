@@ -16,6 +16,7 @@ class CarrierSerializer(serializers.ModelSerializer):
                         queryset=Carrier.objects.all(),
                         message='CPF já cadastrado'
                     ),
+                    CpfValidator()
                 ]
             }
         }
