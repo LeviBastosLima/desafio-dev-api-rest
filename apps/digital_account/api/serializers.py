@@ -12,6 +12,12 @@ class DigitalAccountSerializerCreate(serializers.ModelSerializer):
         fields = ('agency', 'number', 'cpf')
 
 
+class DigitalAccountSerializerStatusActive(serializers.ModelSerializer):
+    class Meta:
+        model = DigitalAccount
+        fields = ('active',)
+
+
 class DigitalAccountSerializer(serializers.ModelSerializer):
 
     carrier = CarrierSerializer(read_only=True, required=False)

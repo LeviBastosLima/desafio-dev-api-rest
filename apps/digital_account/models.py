@@ -7,6 +7,7 @@ class DigitalAccount(models.Model):
     balance = models.DecimalField('Saldo', decimal_places=2, max_digits=12, default=0)
     number = models.CharField('Número da conta', max_length=9)
     agency = models.CharField('Agência', max_length=5)
+    active = models.BooleanField('Ativo', default=True)
 
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
 

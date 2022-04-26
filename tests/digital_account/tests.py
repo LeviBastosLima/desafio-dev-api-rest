@@ -31,10 +31,10 @@ class DigitalAccountTestCase(TestCase):
         self.client = APIClient()
         self.base_url = reverse('digital-accounts-list')
         self.carrier_maria = Carrier.objects.get(cpf='01205005072')
-        self.carrier_lucas = Carrier.objects.get(cpf='86902396000')
-        self.digital_account = DigitalAccount.objects.get(agency='0003', number='56813658', carrier=self.carrier_lucas)
+        self.carrier_Junior = Carrier.objects.get(cpf='86902396000')
+        self.digital_account = DigitalAccount.objects.get(agency='0003', number='56813658', carrier=self.carrier_Junior)
 
-    def test_create_digital_account(self):
+    def test_create_digital_account_successful(self):
         payload = {
             'cpf': self.carrier_maria.cpf,
             'agency': '0055',
@@ -57,22 +57,33 @@ class DigitalAccountTestCase(TestCase):
         self.assertEqual(expected_status_code, actual_status_code)
         self.assertTrue(created)
 
-    def test_retrieve_digital_account(self):
-        expected_data = {'agency': '0003', 'number': '56813658', 'balance': '0.00'}
+    def test_retrieve_digital_account_successful(self):
 
         response = self.client.get(f'{self.base_url}{self.digital_account.pk}/')
 
         actual_data = response.data
+        expected_data = {'agency': '0003', 'number': '56813658', 'balance': '0.00'}
 
         self.assertEqual(expected_data, actual_data)
 
-    def test_delete_digital_account(self):
-        response = self.client.delete(f'{self.base_url}{self.digital_account.pk}/')
+    def test_disable_digital_account(self):
+        payload = {
+            'active': False
+        }
+        self.client.patch(f'{self.base_url}{self.digital_account.pk}/', payload, format='json',
+                          HTTP_CARRIER=self.carrier_Junior.pk)
+
+        actual_active = DigitalAccount.objects.get(pk=self.digital_account.pk).active
+
+        self.assertFalse(actual_active)
+
+    def test_delete_digital_account_successful(self):
+        response = self.client.delete(f'{self.base_url}{self.digital_account.pk}/', HTTP_CARRIER=self.carrier_Junior.pk)
         actual_status_code = response.status_code
 
         expected_status_code = status.HTTP_204_NO_CONTENT
 
-        exist = DigitalAccount.objects.filter(carrier=self.carrier_lucas).exists()
+        exist = DigitalAccount.objects.filter(carrier=self.carrier_Junior).exists()
 
         self.assertEqual(expected_status_code, actual_status_code)
         self.assertFalse(exist)
