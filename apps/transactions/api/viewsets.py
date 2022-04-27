@@ -1,3 +1,4 @@
+import decimal
 from datetime import datetime
 
 from django.db.models import Sum
@@ -27,25 +28,31 @@ class TransactionViewSet(ViewSet):
 
             transaction = Transaction.objects.filter(digital_account_id=digital_account.pk,
                                                       date_transaction__gte=start_today,
-                                                      date_transaction__lte=end_today).aggregate(Sum('value'))
+                                                      date_transaction__lte=end_today,
+                                                     transaction_type=Transaction.TransactionType.WITHDRAW)\
+                .aggregate(Sum('value'))
+
+            transaction['value__sum'] = transaction['value__sum'] if transaction['value__sum'] != None \
+                else decimal.Decimal(0.00)
 
             max_daily_withdraw = 2000.00
             total_transacion_value = transaction['value__sum'] + data['value']
-            if total_transacion_value < max_daily_withdraw:
-                if digital_account.balance > data['value']:
+            if digital_account.balance > data['value']:
+                if total_transacion_value < max_daily_withdraw:
                     data['value'] = -data['value']
                 else:
-                    error_message = 'Error: Sua conta não possui saldo suficiente.'
+                    error_message = 'Error: Seu limite de saque diário já foi utilizado.'
                     raise PermissionDenied(error_message)
             else:
-                error_message = 'Error: Seu limite de saque diário já foi utilizado.'
+                error_message = 'Error: Sua conta não possui saldo suficiente.'
                 raise PermissionDenied(error_message)
+
 
         digital_account.balance += data['value']
         digital_account.save()
 
         transaction = Transaction.objects.create(
-            value=data['value'],
+            value=abs(data['value']),
             date_transaction=datetime.now(),
             transaction_type=data['transaction_type'],
             digital_account=digital_account,
