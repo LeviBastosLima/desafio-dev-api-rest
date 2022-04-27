@@ -1,6 +1,5 @@
-from django.core import serializers
-
 from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -14,9 +13,7 @@ class DigitalAccountViewSet(ViewSet):
     def create(self, request):
 
         serializer = DigitalAccountSerializerCreate(data=request.data)
-        print(serializer)
-        if not serializer.is_valid():
-            return Response('Error', status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
 
@@ -28,16 +25,23 @@ class DigitalAccountViewSet(ViewSet):
             carrier=carrier
         )
 
-        return Response('Conta criada com sucesso', status=status.HTTP_201_CREATED)
+        return Response({'message': 'Conta digital criada com sucesso'}, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, pk):
-        digital_account = DigitalAccountSerializer(DigitalAccount.objects.get(pk=pk)).data
+        try:
+            digital_account = DigitalAccountSerializer(DigitalAccount.objects.get(pk=pk)).data
 
-        return Response({
-            'agency': digital_account['agency'],
-            'number': digital_account['number'],
-            'balance': digital_account['balance']
-        }, status=status.HTTP_200_OK)
+            return Response({
+                'agency': digital_account['agency'],
+                'number': digital_account['number'],
+                'balance': digital_account['balance']
+            })
+        except DigitalAccount.DoesNotExist as e:
+            print(e)
+            raise ValidationError('Conta digital não existe')
+        except Exception as e:
+            print(e)
+            raise APIException()
 
     def partial_update(self, request, pk):
         serializer = DigitalAccountSerializerStatusActive(data=request.data)
@@ -45,9 +49,7 @@ class DigitalAccountViewSet(ViewSet):
 
         data = serializer.validated_data
 
-        carrier_id = request.META['HTTP_CARRIER']
-
-        digital_account = DigitalAccount.objects.get(pk=pk, carrier_id=carrier_id)
+        digital_account = DigitalAccount.objects.get(pk=pk)
         digital_account.active = data['active']
         digital_account.save()
 
@@ -55,8 +57,12 @@ class DigitalAccountViewSet(ViewSet):
         return Response(f'Conta digital {active_status} com sucesso')
 
     def destroy(self, request, pk) -> Response:
-        carrier_id = request.META['HTTP_CARRIER']
-
-        DigitalAccount.objects.get(pk=pk, carrier_id=carrier_id).delete()
-
-        return Response('Conta digital deletada com sucesso', status=status.HTTP_204_NO_CONTENT)
+        try:
+            DigitalAccount.objects.get(pk=pk).delete()
+            return Response('Conta digital deletada com sucesso', status=status.HTTP_204_NO_CONTENT)
+        except DigitalAccount.DoesNotExist as e:
+            print(e)
+            raise ValidationError('Conta digital não existe')
+        except Exception as e:
+            print(e)
+            raise APIException()

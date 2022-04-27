@@ -42,10 +42,8 @@ class DigitalAccountTestCase(TestCase):
         }
 
         response = self.client.post(self.base_url, payload, format='json')
+
         actual_status_code = response.status_code
-
-        print(response.data)
-
         expected_status_code = status.HTTP_201_CREATED
 
         created = DigitalAccount.objects.filter(
@@ -57,6 +55,19 @@ class DigitalAccountTestCase(TestCase):
         self.assertEqual(expected_status_code, actual_status_code)
         self.assertTrue(created)
 
+    def test_create_digital_account_error(self):
+        payload = {
+            'cpf': self.carrier_maria.cpf,
+            'agency': '0055',
+        }
+
+        response = self.client.post(self.base_url, payload, format='json')
+
+        actual_status_code = response.status_code
+        expected_status_code = status.HTTP_400_BAD_REQUEST
+
+        self.assertEqual(expected_status_code, actual_status_code)
+
     def test_retrieve_digital_account_successful(self):
 
         response = self.client.get(f'{self.base_url}{self.digital_account.pk}/')
@@ -65,6 +76,15 @@ class DigitalAccountTestCase(TestCase):
         expected_data = {'agency': '0003', 'number': '56813658', 'balance': '0.00'}
 
         self.assertEqual(expected_data, actual_data)
+
+    def test_retrieve_digital_account_error(self):
+
+        response = self.client.get(f'{self.base_url}5/')
+
+        actual_status_code = response.status_code
+        expected_status_code = status.HTTP_400_BAD_REQUEST
+
+        self.assertEqual(expected_status_code, actual_status_code)
 
     def test_disable_digital_account(self):
         payload = {

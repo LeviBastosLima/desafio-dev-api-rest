@@ -1,12 +1,9 @@
-from typing import Union
-
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, APIException
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from apps.carrier.api.serializers import CarrierSerializer
-from apps.carrier.api.validators.cpf_validator import CpfValidator
 from apps.carrier.models import Carrier
 
 

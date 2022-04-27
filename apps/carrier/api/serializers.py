@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from apps.carrier.models import Carrier
-from .validators.cpf_validator import CpfValidator
+from apps.validators.cpf_validator import CpfValidator
 
 
 class CarrierSerializer(serializers.ModelSerializer):

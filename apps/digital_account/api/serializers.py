@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.carrier.api.serializers import CarrierSerializer
 from apps.digital_account.models import DigitalAccount
+from apps.validators.cpf_validator import CpfValidator
 
 
 class DigitalAccountSerializerCreate(serializers.ModelSerializer):
@@ -10,6 +11,13 @@ class DigitalAccountSerializerCreate(serializers.ModelSerializer):
     class Meta:
         model = DigitalAccount
         fields = ('agency', 'number', 'cpf')
+        extra_kwargs = {
+            'cpf': {
+                'validators': [
+                    CpfValidator()
+                ]
+            }
+        }
 
 
 class DigitalAccountSerializerStatusActive(serializers.ModelSerializer):
