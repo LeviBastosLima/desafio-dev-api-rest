@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.test import TestCase
 from django.urls import reverse
@@ -19,11 +19,30 @@ class TransactionTestCase(TestCase):
             cpf='86902396000'
         )
 
-        DigitalAccount.objects.create(
+        digital_account = DigitalAccount.objects.create(
             balance=5500.00,
             agency='0003',
             number='56813658',
             carrier=carrier
+        )
+
+        Transaction.objects.create(
+            value=3000.00,
+            date_transaction=datetime(2022, 4, 23, 18, 20, 55),
+            digital_account=digital_account
+        )
+
+        Transaction.objects.create(
+            value=3500.00,
+            date_transaction=datetime(2022, 4, 25, 16, 56, 23),
+            digital_account=digital_account
+        )
+
+        Transaction.objects.create(
+            value=1000.00,
+            date_transaction=datetime(2022, 4, 26, 12, 1, 25),
+            transaction_type=Transaction.TransactionType.WITHDRAW,
+            digital_account=digital_account
         )
 
     def setUp(self) -> None:
@@ -99,3 +118,32 @@ class TransactionTestCase(TestCase):
         self.assertEqual(actual_status_code, expected_status_code)
         self.assertEqual(actual_balance, expected_balance)
         self.assertTrue(created)
+
+    def test_get_extract(self):
+        response = self.client.get(f'{self.base_url}?digital_account={self.digital_account.pk}', )
+
+        actual_status_code = response.status_code
+        expected_status_code = 200
+
+        actual_number_of_results = len(response.data)
+        expected_number_of_results = 3
+
+        self.assertEqual(expected_status_code, actual_status_code)
+        self.assertEqual(expected_number_of_results, actual_number_of_results)
+
+
+    def test_get_extract_with_period(self):
+        start_date = '2022-04-25'
+        end_date = '2022-04-27'
+        params = f'start_date={start_date}&end_date={end_date}&digital_account={self.digital_account.pk}'
+
+        response = self.client.get(f'{self.base_url}?{params}', HTTP_CARRIER=self.carrier_lucas.pk)
+
+        actual_status_code = response.status_code
+        expected_status_code = 200
+
+        actual_number_of_results = len(response.data)
+        expected_number_of_results = 2
+
+        self.assertEqual(expected_status_code, actual_status_code)
+        self.assertEqual(expected_number_of_results, actual_number_of_results)

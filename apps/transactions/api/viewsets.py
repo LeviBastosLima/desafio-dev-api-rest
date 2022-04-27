@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from apps.transactions.api.serializers import TransactionSerializer
+from apps.transactions.api.serializers import TransactionSerializer, TransactionSerializerCreate
 from apps.transactions.models import Transaction
 from apps.digital_account.models import DigitalAccount
 
@@ -12,7 +12,7 @@ from apps.digital_account.models import DigitalAccount
 class TransactionViewSet(ViewSet):
 
     def create(self, request):
-        serializer = TransactionSerializer(data=request.data)
+        serializer = TransactionSerializerCreate(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
@@ -39,3 +39,17 @@ class TransactionViewSet(ViewSet):
         response_data = TransactionSerializer(transaction).data
 
         return Response({'message': 'Criado com sucesso', 'data': response_data}, status=status.HTTP_201_CREATED)
+
+    def list(self, request):
+        query = request.query_params
+
+        start_date = query.get('start_date', datetime(2000, 1, 1))
+        end_date = query.get('end_date', datetime(2050, 1, 1))
+        digital_account_id = query.get('digital_account', datetime(2050, 1, 1))
+
+        transactions = Transaction.objects.filter(digital_account_id=digital_account_id,
+                                                  date_transaction__gte=start_date,
+                                                  date_transaction__lte=end_date)
+        data = TransactionSerializer(transactions, many=True).data
+
+        return Response(data)
