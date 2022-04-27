@@ -28,7 +28,7 @@ class CarrierTests(TestCase):
         }
 
         response = self.client.post(self.base_url, payload, format='json')
-        print(response.data)
+
         actual_status_code = response.status_code
         expected_status_code = status.HTTP_201_CREATED
 
@@ -37,7 +37,25 @@ class CarrierTests(TestCase):
             cpf=payload['cpf']
         ).exists()
 
+        actual_response_data = response.data
+        expected_response_data = {
+            'message': 'Portador criado com sucesso'
+        }
+
         self.assertTrue(created)
+        self.assertEqual(expected_status_code, actual_status_code)
+        self.assertEqual(expected_response_data, actual_response_data)
+
+    def test_create_carrier_with_serializer_error(self):
+        payload = {
+            'cpf': '51153409097'
+        }
+
+        response = self.client.post(self.base_url, payload, format='json')
+
+        actual_status_code = response.status_code
+        expected_status_code = status.HTTP_400_BAD_REQUEST
+
         self.assertEqual(expected_status_code, actual_status_code)
 
     def test_create_carrier_with_cpf_unique_error(self):
@@ -69,10 +87,25 @@ class CarrierTests(TestCase):
     def test_delete_carrier_successful(self) -> None:
         url = f'{self.base_url}{self.carrier_maria.pk}/'
 
-        actual_status_code = self.client.delete(url).status_code
+        response = self.client.delete(url)
+
+        actual_status_code = response.status_code
         expected_status_code = status.HTTP_204_NO_CONTENT
 
-        response = Carrier.objects.filter(pk=self.carrier_maria.pk).exists()
+        carrier = Carrier.objects.filter(pk=self.carrier_maria.pk).exists()
 
-        self.assertFalse(response)
+        self.assertFalse(carrier)
+        self.assertEqual(expected_status_code, actual_status_code)
+
+    def test_delete_carrier_error(self):
+        url = f'{self.base_url}5/'
+
+        response = self.client.delete(url)
+
+        actual_status_code = response.status_code
+        expected_status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        carrier = Carrier.objects.filter(pk=self.carrier_maria.pk).exists()
+
+        self.assertTrue(carrier)
         self.assertEqual(expected_status_code, actual_status_code)

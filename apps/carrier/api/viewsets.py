@@ -1,6 +1,7 @@
 from typing import Union
 
 from rest_framework import status
+from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -17,17 +18,17 @@ class CarrierViewSet(ViewSet):
 
         data = serializer.validated_data
 
-        carrier = Carrier.objects.create(
+        Carrier.objects.create(
             name=data['name'],
             cpf=data['cpf']
         )
 
-        carrier_s = CarrierSerializer(data=carrier)
+        return Response({'message': 'Portador criado com sucesso'}, status=status.HTTP_201_CREATED)
 
-        print(carrier_s.error_messages)
-
-        return Response('Portador criado com sucesso', status=status.HTTP_201_CREATED)
-
-    def destroy(self, request, pk: Union[int, None] = None) -> Response:
-        Carrier.objects.get(pk=1).delete()
-        return Response('Portador deletado com sucesso', status=status.HTTP_204_NO_CONTENT)
+    def destroy(self, request, pk: int) -> Response:
+        try:
+            Carrier.objects.get(pk=pk).delete()
+            return Response('Portador deletado com sucesso', status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            print(f'Error>>> {e}')
+            raise APIException()
