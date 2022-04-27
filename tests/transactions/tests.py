@@ -75,7 +75,7 @@ class TransactionTestCase(TestCase):
 
     def test_withdraw_successful(self):
         payload = {
-            'value': 1000,
+            'value': 800,
             'transaction_type': 1,
             'digital_account_id': self.digital_account.pk
         }
@@ -89,7 +89,7 @@ class TransactionTestCase(TestCase):
         ).exists()
 
         actual_balance = DigitalAccount.objects.get(pk=payload['digital_account_id']).balance
-        expected_balance = 4500.00
+        expected_balance = 4700.00
 
         self.assertEqual(actual_status_code, expected_status_code)
         self.assertEqual(actual_balance, expected_balance)
@@ -136,8 +136,8 @@ class TransactionTestCase(TestCase):
         self.assertEqual(expected_number_of_results, actual_number_of_results)
 
     def test_get_extract_with_period(self):
-        start_date = '2022-04-25'
-        end_date = '2022-04-27'
+        start_date = '2022-04-25 00:00:00'
+        end_date = '2022-04-27 23:59:59'
         params = f'start_date={start_date}&end_date={end_date}&digital_account={self.digital_account.pk}'
 
         response = self.client.get(f'{self.base_url}?{params}', HTTP_CARRIER=self.carrier_lucas.pk)
