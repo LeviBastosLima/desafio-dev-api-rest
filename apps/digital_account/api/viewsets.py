@@ -54,12 +54,12 @@ class DigitalAccountViewSet(ViewSet):
         digital_account.save()
 
         active_status = 'ativada' if data['active'] else 'desativada'
-        return Response(f'Conta digital {active_status} com sucesso')
+        return Response({'message': f'Conta digital {active_status} com sucesso'})
 
     def destroy(self, request, pk) -> Response:
         try:
             DigitalAccount.objects.get(pk=pk).delete()
-            return Response('Conta digital deletada com sucesso', status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Conta digital deletada com sucesso'}, status=status.HTTP_204_NO_CONTENT)
         except DigitalAccount.DoesNotExist as e:
             print(e)
             raise ValidationError('Conta digital não existe')
