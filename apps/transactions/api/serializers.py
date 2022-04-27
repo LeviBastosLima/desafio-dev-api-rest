@@ -5,18 +5,11 @@ from apps.validators.cpf_validator import CpfValidator
 
 
 class TransactionSerializerCreate(serializers.ModelSerializer):
-    cpf = serializers.CharField(required=False)
+    digital_account_id = serializers.CharField()
 
     class Meta:
         model = Transaction
-        fields = ('id', 'value', 'transaction_type', 'cpf')
-        extra_kwargs = {
-            'cpf': {
-                'validators': [
-                    CpfValidator()
-                ]
-            }
-        }
+        fields = ('id', 'value', 'transaction_type', 'digital_account_id')
 
 
 class TransactionSerializer(serializers.ModelSerializer):

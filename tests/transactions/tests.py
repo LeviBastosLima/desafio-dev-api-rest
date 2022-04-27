@@ -40,7 +40,7 @@ class TransactionTestCase(TestCase):
 
         Transaction.objects.create(
             value=1000.00,
-            date_transaction=datetime(2022, 4, 26, 12, 1, 25),
+            date_transaction=datetime(2022, 4, 27, 12, 1, 25),
             transaction_type=Transaction.TransactionType.WITHDRAW,
             digital_account=digital_account
         )
@@ -55,7 +55,7 @@ class TransactionTestCase(TestCase):
         payload = {
             'value': 1000,
             'transaction_type': 0,
-            'cpf': '86902396000'
+            'digital_account_id': self.digital_account.pk
         }
 
         response = self.client.post(self.base_url, payload, format='json')
@@ -66,7 +66,7 @@ class TransactionTestCase(TestCase):
             pk=response.data['data']['id'],
         ).exists()
 
-        actual_balance = DigitalAccount.objects.get(carrier__cpf=payload['cpf']).balance
+        actual_balance = DigitalAccount.objects.get(pk=payload['digital_account_id']).balance
         expected_balance = 6500.00
 
         self.assertEqual(actual_status_code, expected_status_code)
@@ -77,7 +77,7 @@ class TransactionTestCase(TestCase):
         payload = {
             'value': 1000,
             'transaction_type': 1,
-            'cpf': '86902396000'
+            'digital_account_id': self.digital_account.pk
         }
 
         response = self.client.post(self.base_url, payload, format='json')
@@ -88,7 +88,7 @@ class TransactionTestCase(TestCase):
             pk=response.data['data']['id'],
         ).exists()
 
-        actual_balance = DigitalAccount.objects.get(carrier__cpf=payload['cpf']).balance
+        actual_balance = DigitalAccount.objects.get(pk=payload['digital_account_id']).balance
         expected_balance = 4500.00
 
         self.assertEqual(actual_status_code, expected_status_code)
@@ -99,25 +99,29 @@ class TransactionTestCase(TestCase):
         payload = {
             'value': 10000,
             'transaction_type': 1,
-            'cpf': '86902396000'
+            'digital_account_id': self.digital_account.pk
         }
 
         response = self.client.post(self.base_url, payload, format='json')
-
-        print(response)
-
         actual_status_code = response.status_code
-        expected_status_code = status.HTTP_201_CREATED
-        created = Transaction.objects.filter(
-            pk=response.data['data']['id'],
-        ).exists()
-
-        actual_balance = DigitalAccount.objects.get(carrier__cpf=payload['cpf']).balance
-        expected_balance = 4500.00
+        expected_status_code = status.HTTP_403_FORBIDDEN
 
         self.assertEqual(actual_status_code, expected_status_code)
-        self.assertEqual(actual_balance, expected_balance)
-        self.assertTrue(created)
+
+    def test_withdraw_over_daily_limit(self):
+        payload = {
+            'value': 1500,
+            'transaction_type': 1,
+            'digital_account_id': self.digital_account.pk
+        }
+
+        response = self.client.post(self.base_url, payload, format='json')
+        actual_status_code = response.status_code
+        expected_status_code = status.HTTP_403_FORBIDDEN
+
+        print(response.data)
+
+        self.assertEqual(expected_status_code, actual_status_code)
 
     def test_get_extract(self):
         response = self.client.get(f'{self.base_url}?digital_account={self.digital_account.pk}', )
@@ -130,7 +134,6 @@ class TransactionTestCase(TestCase):
 
         self.assertEqual(expected_status_code, actual_status_code)
         self.assertEqual(expected_number_of_results, actual_number_of_results)
-
 
     def test_get_extract_with_period(self):
         start_date = '2022-04-25'

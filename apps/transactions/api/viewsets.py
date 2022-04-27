@@ -1,6 +1,8 @@
 from datetime import datetime
 
+from django.db.models import Sum
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -17,16 +19,30 @@ class TransactionViewSet(ViewSet):
 
         data = serializer.validated_data
 
-        digital_account = DigitalAccount.objects.get(carrier__cpf=data['cpf'])
-        data['value'] = data['value'] if data['transaction_type'] == Transaction.TransactionType.DEPOSIT \
-            else -data['value']
+        digital_account = DigitalAccount.objects.get(pk=data['digital_account_id'])
+
+        if Transaction.TransactionType.WITHDRAW == data['transaction_type']:
+            start_today = datetime.today().replace(hour=0, minute=0, second=0)
+            end_today = datetime.today().replace(hour=23, minute=59, second=59)
+
+            transaction = Transaction.objects.filter(digital_account_id=digital_account.pk,
+                                                      date_transaction__gte=start_today,
+                                                      date_transaction__lte=end_today).aggregate(Sum('value'))
+
+            max_daily_withdraw = 2000.00
+            total_transacion_value = transaction['value__sum'] + data['value']
+            if total_transacion_value < max_daily_withdraw:
+                if digital_account.balance > data['value']:
+                    data['value'] = -data['value']
+                else:
+                    error_message = 'Error: Sua conta não possui saldo suficiente.'
+                    raise PermissionDenied(error_message)
+            else:
+                error_message = 'Error: Seu limite de saque diário já foi utilizado.'
+                raise PermissionDenied(error_message)
+
         digital_account.balance += data['value']
-
-        if digital_account.balance < 0:
-            value_withdraw = -data['value']
-            raise f"Error, Sua conta possui {digital_account.balance + value_withdraw} " \
-                  f"e você está tentando sacar {value_withdraw}"
-
+        print(digital_account.balance)
         digital_account.save()
 
         transaction = Transaction.objects.create(
@@ -45,7 +61,7 @@ class TransactionViewSet(ViewSet):
 
         start_date = query.get('start_date', datetime(2000, 1, 1))
         end_date = query.get('end_date', datetime(2050, 1, 1))
-        digital_account_id = query.get('digital_account', datetime(2050, 1, 1))
+        digital_account_id = query.get('digital_account')
 
         transactions = Transaction.objects.filter(digital_account_id=digital_account_id,
                                                   date_transaction__gte=start_date,
