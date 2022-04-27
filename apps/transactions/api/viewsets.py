@@ -42,7 +42,6 @@ class TransactionViewSet(ViewSet):
                 raise PermissionDenied(error_message)
 
         digital_account.balance += data['value']
-        print(digital_account.balance)
         digital_account.save()
 
         transaction = Transaction.objects.create(

@@ -119,8 +119,6 @@ class TransactionTestCase(TestCase):
         actual_status_code = response.status_code
         expected_status_code = status.HTTP_403_FORBIDDEN
 
-        print(response.data)
-
         self.assertEqual(expected_status_code, actual_status_code)
 
     def test_get_extract(self):
